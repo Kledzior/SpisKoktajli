@@ -1,4 +1,4 @@
-package pl.SpisKoktajli.ui.theme
+package com.example.mobilecocktails.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
