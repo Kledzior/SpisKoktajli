@@ -1,4 +1,4 @@
-package pl.SpisKoktajli.ui.theme
+package com.example.mobilecocktails.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -34,7 +34,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun SpisKoktajliTheme(
+fun MobileCocktailsTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

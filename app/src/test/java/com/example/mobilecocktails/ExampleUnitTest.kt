@@ -1,4 +1,4 @@
-package pl.SpisKoktajli
+package com.example.mobilecocktails
 
 import org.junit.Test
 
