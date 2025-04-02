@@ -59,7 +59,7 @@ fun SplashScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Witamy w aplikacji Mobile Cocktails! 🍹",
+            text = "Witamy w aplikacji Mobile Cocktails! \uD83C\uDF79 \uD83D\uDE0E",
             style = MaterialTheme.typography.headlineMedium
         )
 
@@ -149,9 +149,9 @@ fun CocktailListWithDetails() {
     ) {
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight()  // Wypełnia całą dostępną wysokość
-                .widthIn(max = 150.dp)  // Ogranicza szerokość lewej kolumny
-                .padding(end = 16.dp,top = 8.dp )  // Padding między kolumnami
+                .fillMaxHeight()
+                .weight(1f)
+                .padding(end = 16.dp,top = 8.dp )
                 .background(Color(0xFF0c2a36))
         ) {
             items(cocktails) { cocktail ->
@@ -171,7 +171,7 @@ fun CocktailListWithDetails() {
 
         Column(
             modifier = Modifier
-                .fillMaxHeight()
+                .weight(2f)
             .padding(top=10.dp)
         ) {
             val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
