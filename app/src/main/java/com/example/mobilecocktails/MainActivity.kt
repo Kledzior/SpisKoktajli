@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.saveable.rememberSaveable
 
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 
@@ -72,11 +73,11 @@ fun SplashScreen(navController: NavController) {
 }
 @Composable
 fun CocktailListWithDetails() {
-    val cocktails = remember {
+    val cocktails = rememberSaveable {
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini")
     }
 
-    val cocktailsDetails = remember {
+    val cocktailsDetails = rememberSaveable {
         mapOf(
             "Cosmopolitan" to Pair(
                 listOf("40ml Wódka cytrynowa", "20ml Triple Sec", "20ml Sok z limonki", "30ml Sok żurawinowy"),
@@ -140,7 +141,7 @@ fun CocktailListWithDetails() {
 
 
 
-    var selectedCocktail by remember { mutableStateOf("Cosmopolitan") }
+    var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
 
     Row(
         modifier = Modifier
@@ -226,13 +227,13 @@ fun extractSecondsFromText(text: String): List<Int> {
 
 @Composable
 fun CountdownTimer(durationSeconds: List<Int>) {
-    var currentIndex by remember { mutableStateOf(0) }
+    var currentIndex by rememberSaveable { mutableStateOf(0) }
     val currentDuration = durationSeconds.getOrNull(currentIndex)
 
     if (currentDuration != null) {
-        var timeLeft by remember { mutableIntStateOf(currentDuration) }
-        var isRunning by remember { mutableStateOf(false) }
-        var isPaused by remember { mutableStateOf(false) }
+        var timeLeft by rememberSaveable { mutableIntStateOf(currentDuration) }
+        var isRunning by rememberSaveable { mutableStateOf(false) }
+        var isPaused by rememberSaveable { mutableStateOf(false) }
 
         LaunchedEffect(key1 = currentIndex, key2 = isRunning, key3 = isPaused) {
             while (timeLeft > 0 && isRunning && !isPaused) {
