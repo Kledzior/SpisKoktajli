@@ -16,10 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.navigation.compose.composable
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
@@ -134,7 +132,7 @@ fun CocktailListWithDetails() {
             ),
             "Espresso Martini" to Pair(
                 listOf("40ml Wódka", "20ml Likier kawowy (np. Kahlua)", "30ml Świeżo parzona kawa espresso", "10ml Syrop cukrowy", "Lód", "3 ziarna kawy do dekoracji"),
-                "Do shakera z lodem dodaj wódkę, likier kawowy, espresso i syrop cukrowy. Wstrząśnij energicznie przez około 15 sekund. Przelej do schłodzonego kieliszka koktajlowego przez sitko barmańskie. Udekoruj trzema ziarnami kawy."
+                "Do shakera z lodem dodaj wódkę, likier kawowy, espresso i syrop cukrowy. Wstrząśnij energicznie przez około 15 sekund. Przelej do schłodzonego kieliszka koktajlowego przez sitko barmańskie. Udekoruj trzema ziarnami kawy. Wypij w ciagu 60 sekund"
             ),
         )
     }
@@ -213,9 +211,7 @@ fun CocktailListWithDetails() {
             )
 
             val secondsList = extractSecondsFromText(preparation)
-            secondsList.forEach { seconds ->
-                CountdownTimer(durationSeconds = seconds)
-            }
+            CountdownTimer(secondsList)
         }
 
     }
@@ -229,55 +225,66 @@ fun extractSecondsFromText(text: String): List<Int> {
 }
 
 @Composable
-fun CountdownTimer(durationSeconds: Int) {
-    var timeLeft by remember { mutableStateOf(durationSeconds) }
-    var isRunning by remember { mutableStateOf(false) }
-    var pause by remember { mutableStateOf(false)}
+fun CountdownTimer(durationSeconds: List<Int>) {
+    var currentIndex by remember { mutableStateOf(0) }
+    val currentDuration = durationSeconds.getOrNull(currentIndex)
 
-    LaunchedEffect(isRunning) {
-        if (isRunning) {
-            while (timeLeft > 0 && !pause) {
+    if (currentDuration != null) {
+        var timeLeft by remember { mutableIntStateOf(currentDuration) }
+        var isRunning by remember { mutableStateOf(false) }
+        var isPaused by remember { mutableStateOf(false) }
+
+        LaunchedEffect(key1 = currentIndex, key2 = isRunning, key3 = isPaused) {
+            while (timeLeft > 0 && isRunning && !isPaused) {
                 kotlinx.coroutines.delay(1000L)
                 timeLeft--
             }
-            isRunning = false
+            if (timeLeft == 0 && currentIndex < durationSeconds.size - 1) {
+                isPaused = true
+                currentIndex++
+                timeLeft = durationSeconds[currentIndex]
+            }
         }
-    }
-    Column(
-        modifier = Modifier.padding(top = 8.dp),
-        horizontalAlignment = Alignment.Start // Or CenterHorizontally
-    ) {
-        Text("⏱ $timeLeft sek", modifier = Modifier.padding(end = 8.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 8.dp)
+
+        Column(
+            modifier = Modifier.padding(top = 8.dp),
+            horizontalAlignment = Alignment.Start
         ) {
-            if(timeLeft == durationSeconds){
-        Button(onClick = {
-                timeLeft = durationSeconds
-                isRunning = true
-                pause = false
-            }) {
-                Text("Start")
-            }
-            }
-            Button(onClick = {
-                timeLeft = durationSeconds
-                isRunning = false
-            }) {
-                Text("Stop")//Reset
-            }
-            if(timeLeft in 1..<durationSeconds) {
-                Button(onClick = {
-                    pause = !pause
-                    if (!pause) {
+            Text("⏱ $timeLeft sek", modifier = Modifier.padding(end = 8.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+
+                if (timeLeft == currentDuration) {
+                    Button(onClick = {
+                        timeLeft = currentDuration
                         isRunning = true
+                        isPaused = false
+                    }) {
+                        Text("Start")
                     }
-                }) {
-                    if (isRunning) {
-                        Text("Przerwij")//Pauza
-                    } else {
-                        Text("Wznów")
+                }
+
+
+                if(timeLeft != currentDuration) {
+                    Button(onClick = {
+                        isRunning = false
+                        timeLeft = currentDuration
+                        isPaused = false
+                    }) {
+                        Text("Stop")
+                    }
+                }
+
+                if (timeLeft in 1 until currentDuration) {
+                    Button(onClick = {
+                        isPaused = !isPaused
+                        if (!isPaused) {
+                            isRunning = true
+                        }
+                    }) {
+                        Text(if (isPaused) "Wznów" else "Przerwij")
                     }
                 }
             }
