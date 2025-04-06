@@ -22,6 +22,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.compose.composable
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 
@@ -146,7 +148,8 @@ fun CocktailListWithDetails() {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-    ) {
+    )
+        {
         LazyColumn(
             modifier = Modifier
                 .fillMaxHeight()
@@ -168,10 +171,12 @@ fun CocktailListWithDetails() {
                 )
             }
         }
+    val scrollState = rememberScrollState()
 
         Column(
             modifier = Modifier
                 .weight(2f)
+                .verticalScroll(scrollState)
             .padding(top=10.dp)
         ) {
             val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
@@ -206,6 +211,76 @@ fun CocktailListWithDetails() {
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(start = 16.dp, top = 4.dp)
             )
+
+            val secondsList = extractSecondsFromText(preparation)
+            secondsList.forEach { seconds ->
+                CountdownTimer(durationSeconds = seconds)
+            }
+        }
+
+    }
+}
+
+fun extractSecondsFromText(text: String): List<Int> {
+    val regex = Regex("""(\d+)\s*(sekund(?:y|a|))""", RegexOption.IGNORE_CASE)
+    return regex.findAll(text).mapNotNull { matchResult ->
+        matchResult.groups[1]?.value?.toIntOrNull()
+    }.toList()
+}
+
+@Composable
+fun CountdownTimer(durationSeconds: Int) {
+    var timeLeft by remember { mutableStateOf(durationSeconds) }
+    var isRunning by remember { mutableStateOf(false) }
+    var pause by remember { mutableStateOf(false)}
+
+    LaunchedEffect(isRunning) {
+        if (isRunning) {
+            while (timeLeft > 0 && !pause) {
+                kotlinx.coroutines.delay(1000L)
+                timeLeft--
+            }
+            isRunning = false
+        }
+    }
+    Column(
+        modifier = Modifier.padding(top = 8.dp),
+        horizontalAlignment = Alignment.Start // Or CenterHorizontally
+    ) {
+        Text("⏱ $timeLeft sek", modifier = Modifier.padding(end = 8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            if(timeLeft == durationSeconds){
+        Button(onClick = {
+                timeLeft = durationSeconds
+                isRunning = true
+                pause = false
+            }) {
+                Text("Start")
+            }
+            }
+            Button(onClick = {
+                timeLeft = durationSeconds
+                isRunning = false
+            }) {
+                Text("Stop")//Reset
+            }
+            if(timeLeft in 1..<durationSeconds) {
+                Button(onClick = {
+                    pause = !pause
+                    if (!pause) {
+                        isRunning = true
+                    }
+                }) {
+                    if (isRunning) {
+                        Text("Przerwij")//Pauza
+                    } else {
+                        Text("Wznów")
+                    }
+                }
+            }
         }
     }
 }
