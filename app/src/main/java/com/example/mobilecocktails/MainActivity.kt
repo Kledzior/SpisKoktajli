@@ -195,7 +195,7 @@ fun CocktailListWithDetails() {
                                 .padding(4.dp)
                                 .fillMaxWidth()
                                 .clickable { selectedCocktail = cocktail },
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0c2a36))
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 val context = LocalContext.current
@@ -217,8 +217,8 @@ fun CocktailListWithDetails() {
                                 )
                                 Text(
                                     text = cocktail,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(8.dp),
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                            modifier = Modifier.padding(8.dp),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
