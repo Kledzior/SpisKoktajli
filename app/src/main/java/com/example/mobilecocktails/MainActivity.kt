@@ -7,8 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+//import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -23,6 +26,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.example.mobilecocktails.R
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 
@@ -146,40 +155,70 @@ fun CocktailListWithDetails() {
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(4.dp)
     )
         {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)
-                .padding(end = 16.dp,top = 8.dp )
-                .background(Color(0xFF0c2a36))
-        ) {
-            items(cocktails) { cocktail ->
-                Text(
-                    text = cocktail,
-                    color = Color.LightGray,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedCocktail = cocktail
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(1),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 4.dp, top = 24.dp)
+            ) {
+                items(cocktails) { cocktail ->
+                    Card(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .fillMaxWidth()
+                            .clickable { selectedCocktail = cocktail },
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0c2a36))
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val context = LocalContext.current
+                            val imageName = cocktail
+                                .lowercase()
+                                .replace(" ", "") // usuwanie spacji
+                                .replace("ñ", "n") // do Piña Colada
+                                .replace("[^a-z0-9_]".toRegex(), "")
+                            val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+
+                            Image(
+                                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                                contentDescription = "$cocktail Image",
+                                modifier = Modifier
+                                    .height(100.dp)
+                                    .fillMaxWidth()
+                                    .background(Color.DarkGray),
+                                contentScale = ContentScale.Crop
+                            )
+//                            Box(
+//                                modifier = Modifier
+//                                    .height(100.dp)
+//                                    .fillMaxWidth()
+//                                    .background(Color.DarkGray)//Placeholder
+//                            )
+                            Text(
+                                text = cocktail,
+                                color = Color.White,
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
-                        .padding(8.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                    }
+                }
             }
-        }
+
     val scrollState = rememberScrollState()
 
         Column(
             modifier = Modifier
                 .weight(2f)
                 .verticalScroll(scrollState)
-            .padding(top=10.dp)
+            .padding(top=24.dp)
         ) {
             val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
 
+
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Wybrany: $selectedCocktail",
                 style = MaterialTheme.typography.titleLarge,
