@@ -27,11 +27,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.Image
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
 import com.example.mobilecocktails.R
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.*
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 
@@ -146,115 +151,125 @@ fun CocktailListWithDetails() {
             ),
         )
     }
-
-
-
-
     var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(4.dp)
-    )
-        {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(1),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 4.dp, top = 24.dp)
-            ) {
-                items(cocktails) { cocktail ->
-                    Card(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .fillMaxWidth()
-                            .clickable { selectedCocktail = cocktail },
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFF0c2a36))
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val context = LocalContext.current
-                            val imageName = cocktail
-                                .lowercase()
-                                .replace(" ", "") // usuwanie spacji
-                                .replace("ñ", "n") // do Piña Colada
-                                .replace("[^a-z0-9_]".toRegex(), "")
-                            val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
-                            Image(
-                                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
-                                contentDescription = "$cocktail Image",
-                                modifier = Modifier
-                                    .height(100.dp)
-                                    .fillMaxWidth()
-                                    .background(Color.DarkGray),
-                                contentScale = ContentScale.Crop
-                            )
-//                            Box(
-//                                modifier = Modifier
-//                                    .height(100.dp)
-//                                    .fillMaxWidth()
-//                                    .background(Color.DarkGray)//Placeholder
-//                            )
-                            Text(
-                                text = cocktail,
-                                color = Color.White,
-                                modifier = Modifier.padding(8.dp),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    val (ingredients, _) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "")
+                    val message = if (ingredients.isNotEmpty()) {
+                        "Składniki: ${ingredients.joinToString(", ")}"
+                    } else {
+                        "Brak danych dla $selectedCocktail"
+                    }
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(message)
+                    }
+                }
+            ) {
+                Icon(Icons.Outlined.Info, contentDescription = "Pokaż składniki")
+            }
+        },
+        content = { innerPadding ->
+
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(4.dp)
+            ) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(1),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp, top = 24.dp)
+                ) {
+                    items(cocktails) { cocktail ->
+                        Card(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                                .clickable { selectedCocktail = cocktail },
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFF0c2a36))
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                val context = LocalContext.current
+                                val imageName = cocktail
+                                    .lowercase()
+                                    .replace(" ", "")
+                                    .replace("ñ", "n")
+                                    .replace("[^a-z0-9_]".toRegex(), "")
+                                val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+
+                                Image(
+                                    painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                                    contentDescription = "$cocktail Image",
+                                    modifier = Modifier
+                                        .height(100.dp)
+                                        .fillMaxWidth()
+                                        .background(Color.DarkGray),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Text(
+                                    text = cocktail,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(8.dp),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
                         }
                     }
                 }
+
+                val scrollState = rememberScrollState()
+
+                Column(
+                    modifier = Modifier
+                        .weight(2f)
+                        .verticalScroll(scrollState)
+                        .padding(top = 24.dp)
+                ) {
+                    val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
+
+                    Text(
+                        text = "Wybrany: $selectedCocktail",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    Text(
+                        text = "Składniki:",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                    ingredients.forEach { ingredient ->
+                        Text(
+                            text = "- $ingredient",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Sposób przygotowania:",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = preparation,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                    )
+
+                    val secondsList = extractSecondsFromText(preparation)
+                    CountdownTimer(secondsList)
+                }
             }
-
-    val scrollState = rememberScrollState()
-
-        Column(
-            modifier = Modifier
-                .weight(2f)
-                .verticalScroll(scrollState)
-            .padding(top=24.dp)
-        ) {
-            val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
-
-
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Wybrany: $selectedCocktail",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            Text(
-                text = "Składniki:",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            ingredients.forEach { ingredient ->
-                Text(
-                    text = "- $ingredient",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = "Sposób przygotowania:",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = preparation,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
-
-            val secondsList = extractSecondsFromText(preparation)
-            CountdownTimer(secondsList)
         }
-
-    }
+    )
 }
 
 fun extractSecondsFromText(text: String): List<Int> {
