@@ -52,6 +52,12 @@ import androidx.compose.ui.unit.dp
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.navigation.NavController
 
 class CocktailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -141,6 +147,9 @@ fun CocktailListWithDetails(cocktailName: String?) {
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        topBar = {
+            AppToolbarWithImage(selectedCocktail)
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
 
         floatingActionButton = {
@@ -298,3 +307,44 @@ fun CountdownTimer(durationSeconds: List<Int>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppToolbarWithImage(cocktailName: String?) {
+    val context = LocalContext.current
+    val imageName = cocktailName
+        ?.lowercase()
+        ?.replace(" ", "")
+        ?.replace("ñ", "n")
+        ?.replace("[^a-z0-9_]".toRegex(), "")
+    val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+
+    TopAppBar(
+        title = {
+            if (imageResId != 0) {
+                Image(
+                    painter = painterResource(id = imageResId),
+                    contentDescription = "$cocktailName image",
+                    modifier = Modifier
+                        .height(40.dp)
+                        .fillMaxWidth(),
+                    contentScale = ContentScale.Fit
+                )
+            } else {
+                Text(text = cocktailName ?: "Brak nazwy", style = MaterialTheme.typography.titleMedium)
+            }
+        },
+//        navigationIcon = {
+//            IconButton(onClick = {
+//                // Możesz zamknąć aktywność
+//                (context as? ComponentActivity)?.finish()
+//            }) {
+//                Icon(Icons.Default.ArrowBack, contentDescription = "Wróć")
+//            }
+//        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
