@@ -76,7 +76,11 @@ fun AppNavigation() {
             SplashScreen(navController)
         }
         composable("cocktailList") {
-            CocktailList()
+            CocktailList(navController)
+        }
+        composable("cocktailDetail/{cocktailName}") { backStackEntry ->
+            val cocktailName = backStackEntry.arguments?.getString("cocktailName")
+            CocktailListWithDetails(cocktailName ?: "Unknown")
         }
     }
 }
@@ -102,7 +106,7 @@ fun SplashScreen(navController: NavController) {
     }
 }
 @Composable
-fun CocktailList() {
+fun CocktailList(navController: NavController) {
     val cocktails = rememberSaveable {
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini")
     }
@@ -115,6 +119,14 @@ fun CocktailList() {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            AppToolbar(
+                title = "Poprzedni Koktajl",
+                onNavigationClick = {
+                    navController.navigate("cocktailDetail/${selectedCocktail}")
+                }
+            )
+        },
         content = { innerPadding ->
 
             Row(
@@ -177,7 +189,23 @@ fun CocktailList() {
     )
 }
 
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppToolbar(title: String, onNavigationClick: () -> Unit) {
+    TopAppBar(
+        title = { Text(text = title) },
+        navigationIcon = {
+            IconButton(onClick = onNavigationClick) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Wróć")
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            titleContentColor = MaterialTheme.colorScheme.onPrimary,
+            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
+        )
+    )
+}
 
 //@Preview(showBackground = true)
 //@Composable
