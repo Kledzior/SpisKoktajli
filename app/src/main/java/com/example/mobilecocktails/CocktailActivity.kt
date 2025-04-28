@@ -142,6 +142,24 @@ fun CocktailListWithDetails(cocktailName: String?) {
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    val (ingredients, _) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "")
+                    val message = if (ingredients.isNotEmpty()) {
+                        "Składniki: ${ingredients.joinToString(", ")}"
+                    } else {
+                        "Brak danych dla $selectedCocktail"
+                    }
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(message)
+                    }
+                }
+            ) {
+                Icon(Icons.Outlined.Info, contentDescription = "Pokaż składniki")
+            }
+        },
         content = { innerPadding ->
 
             Row(
