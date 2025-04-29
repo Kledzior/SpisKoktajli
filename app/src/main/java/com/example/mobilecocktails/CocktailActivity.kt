@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 import kotlinx.coroutines.launch
 import android.util.Log
+
 import android.content.Context
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -65,6 +66,7 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.IconButton
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.ArrowBack
 
 
 
@@ -165,6 +167,7 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 title = { Text("Kledzik TU GOTUJESZ") },
             )
         },
+
 
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
@@ -380,6 +383,7 @@ fun FavoriteStar(cocktailName: String) {
         }
     )
 }
+
 
 
 

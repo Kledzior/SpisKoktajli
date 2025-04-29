@@ -97,6 +97,12 @@ fun AppNavigation() {
         }
         composable("cocktailList") {
             CocktailList(navController)
+
+//         }
+//         composable("cocktailDetail/{cocktailName}") { backStackEntry ->
+//             val cocktailName = backStackEntry.arguments?.getString("cocktailName")
+//             CocktailListWithDetails(cocktailName ?: "Unknown")
+
         }
 
         composable("favorites") {
@@ -243,7 +249,7 @@ fun FavoritesList(navController: NavController) {
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini")
     }
 
-    // Wczytujemy zestaw ulubionych nazw
+
     val favoritesSet = remember { loadFavorites(context) }
     val favorites = allCocktails.filter { it in favoritesSet }
     val contextCockTail = LocalContext.current
