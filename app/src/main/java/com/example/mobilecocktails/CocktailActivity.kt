@@ -52,12 +52,24 @@ import androidx.compose.ui.unit.dp
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 import kotlinx.coroutines.launch
 import android.util.Log
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
+
+import android.content.Context
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.clickable
+import androidx.compose.material.rememberDrawerState
+import androidx.compose.material.DrawerValue
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material.*
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.ArrowBack
+
+
+
 
 class CocktailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -139,19 +151,25 @@ fun CocktailListWithDetails(cocktailName: String?) {
             ),
         )
     }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
 
     var selectedCocktail by rememberSaveable { mutableStateOf(cocktailName) }
-
+    val scaffoldState = rememberScaffoldState(drawerState = drawerState)
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        scaffoldState = scaffoldState,
         topBar = {
-            AppToolbarWithImage(selectedCocktail)
+            androidx.compose.material.TopAppBar(
+                title = { Text("Kledzik TU GOTUJESZ") },
+            )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
 
+
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
@@ -170,66 +188,78 @@ fun CocktailListWithDetails(cocktailName: String?) {
             }
         },
         content = { innerPadding ->
-
-            Row(
+            val scrollState = rememberScrollState()
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(scrollState)
                     .padding(innerPadding)
-                    .padding(4.dp)
+                    .padding(25.dp)
+            ) {Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
+                Text(
+                    text = "Wybrany: $selectedCocktail",
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
+                        .padding(bottom = 8.dp)
                         .weight(1f)
-                        .padding(end = 4.dp, top = 24.dp)
-                ) {
+                )
+                if (selectedCocktail != null) {
+                    FavoriteStar(selectedCocktail!!)
                 }
+            }
+                val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
 
-                val scrollState = rememberScrollState()
 
-                Column(
-                    modifier = Modifier
-                        .weight(2f)
-                        .verticalScroll(scrollState)
-                        .padding(top = 24.dp)
-                ) {
-                    val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
+                Text(
+                    text = "Składniki:",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
 
+                ingredients.forEach { ingredient ->
                     Text(
-                        text = "Wybrany: $selectedCocktail",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    Text(
-                        text = "Składniki:",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                    ingredients.forEach { ingredient ->
-                        Text(
-                            text = "- $ingredient",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Sposób przygotowania:",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = preparation,
+                        text = "- $ingredient",
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                     )
-
-                    val secondsList = extractSecondsFromText(preparation)
-                    CountdownTimer(secondsList)
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Sposób przygotowania:",
+                    style = MaterialTheme.typography.titleMedium
+                )
+
+                Text(
+                    text = preparation,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                )
+
+                val secondsList = extractSecondsFromText(preparation)
+                CountdownTimer(secondsList)
             }
         }
     )
+
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 fun extractSecondsFromText(text: String): List<Int> {
@@ -307,44 +337,54 @@ fun CountdownTimer(durationSeconds: List<Int>) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppToolbarWithImage(cocktailName: String?) {
-    val context = LocalContext.current
-    val imageName = cocktailName
-        ?.lowercase()
-        ?.replace(" ", "")
-        ?.replace("ñ", "n")
-        ?.replace("[^a-z0-9_]".toRegex(), "")
-    val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+fun saveFavorites(context: Context, favorites: Set<String>) {
+    val sharedPreferences = context.getSharedPreferences("favorites_prefs", Context.MODE_PRIVATE)
+    sharedPreferences.edit()
+        .putStringSet("favorite_cocktails", favorites)
+        .apply()
+}
 
-    TopAppBar(
-        title = {
-            if (imageResId != 0) {
-                Image(
-                    painter = painterResource(id = imageResId),
-                    contentDescription = "$cocktailName image",
-                    modifier = Modifier
-                        .height(40.dp)
-                        .fillMaxWidth(),
-                    contentScale = ContentScale.Fit
-                )
+fun loadFavorites(context: Context): MutableSet<String> {
+    val sharedPreferences = context.getSharedPreferences("favorites_prefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getStringSet("favorite_cocktails", emptySet())?.toMutableSet() ?: mutableSetOf()
+}
+
+@Composable
+fun FavoriteStar(cocktailName: String) {
+    val context = LocalContext.current
+    // Wczytaj ulubione koktajle z pamięci
+    var favorites by remember { mutableStateOf(loadFavorites(context).toMutableSet()) }
+
+    // Używamy rememberUpdatedState, aby przechować aktualną wersję "favorites" w UI
+    val currentFavorites = rememberUpdatedState(favorites)
+
+    // Sprawdzamy, czy koktajl jest w ulubionych
+    val isFavorite = currentFavorites.value.contains(cocktailName)
+    val HoneyYellow = Color(0xFFFFC107)
+    // Kliknięcie na gwiazdkę
+    Icon(
+        imageVector = Icons.Default.Star,
+        contentDescription = null,
+        tint = if (isFavorite) HoneyYellow else Color.Gray,
+        modifier = Modifier.clickable {
+            // Zmiana statusu ulubionego
+            val updatedFavorites = currentFavorites.value.toMutableSet() // Pobierz najnowszą wersję
+            if (isFavorite) {
+                updatedFavorites.remove(cocktailName)
             } else {
-                Text(text = cocktailName ?: "Brak nazwy", style = MaterialTheme.typography.titleMedium)
+                updatedFavorites.add(cocktailName)
             }
-        },
-//        navigationIcon = {
-//            IconButton(onClick = {
-//                // Możesz zamknąć aktywność
-//                (context as? ComponentActivity)?.finish()
-//            }) {
-//                Icon(Icons.Default.ArrowBack, contentDescription = "Wróć")
-//            }
-//        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-        )
+
+            // Zapisz zmiany w SharedPreferences
+            saveFavorites(context, updatedFavorites)
+
+            // Ustaw zaktualizowaną listę ulubionych, aby UI odświeżyło się
+            favorites = updatedFavorites
+        }
     )
 }
+
+
+
+
+

@@ -47,13 +47,33 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-
+import androidx.compose.material3.Text
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
+import android.content.Context
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.clickable
+import androidx.compose.material.rememberDrawerState
+import androidx.compose.material.DrawerValue
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material.*
+import androidx.compose.material.icons.filled.Menu
+import kotlinx.coroutines.launch
+import androidx.compose.material3.Button
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.*
+import androidx.compose.material.icons.filled.Menu
+import kotlinx.coroutines.launch
+import androidx.navigation.NavOptionsBuilder
+import androidx.compose.material.Card
+import kotlin.text.lowercase
 
 
 class MainActivity : ComponentActivity() {
@@ -77,11 +97,18 @@ fun AppNavigation() {
         }
         composable("cocktailList") {
             CocktailList(navController)
+
+//         }
+//         composable("cocktailDetail/{cocktailName}") { backStackEntry ->
+//             val cocktailName = backStackEntry.arguments?.getString("cocktailName")
+//             CocktailListWithDetails(cocktailName ?: "Unknown")
+
         }
-        composable("cocktailDetail/{cocktailName}") { backStackEntry ->
-            val cocktailName = backStackEntry.arguments?.getString("cocktailName")
-            CocktailListWithDetails(cocktailName ?: "Unknown")
+
+        composable("favorites") {
+            FavoritesList(navController)
         }
+
     }
 }
 @Composable
@@ -113,18 +140,43 @@ fun CocktailList(navController: NavController) {
 
     var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    //val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val contextCockTail = LocalContext.current
-
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val scaffoldState = rememberScaffoldState(drawerState = drawerState)
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        scaffoldState = scaffoldState,
         topBar = {
-            AppToolbar(
-                title = "Poprzedni Koktajl",
-                onNavigationClick = {
-                    navController.navigate("cocktailDetail/${selectedCocktail}")
+            androidx.compose.material.TopAppBar(
+                title = { Text("Witamy w aplikacji z koktajlami") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        scope.launch { drawerState.open() }
+                    }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                    }
                 }
+            )
+        },
+
+        drawerContent = {
+            Text("Główna Strona",
+                Modifier
+                    .fillMaxWidth().padding(16.dp)
+                    .clickable {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("cocktailList") { popUpTo("cocktailList") }
+                    }
+            )
+            Text("★ Ulubione",
+                Modifier
+                    .fillMaxWidth().padding(16.dp)
+                    .clickable {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("favorites") { popUpTo("cocktailList") }
+                    }
             )
         },
         content = { innerPadding ->
@@ -188,29 +240,112 @@ fun CocktailList(navController: NavController) {
         }
     )
 }
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppToolbar(title: String, onNavigationClick: () -> Unit) {
-    TopAppBar(
-        title = { Text(text = title) },
-        navigationIcon = {
-            IconButton(onClick = onNavigationClick) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Wróć")
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-        )
-    )
-}
+fun FavoritesList(navController: NavController) {
+    val context = LocalContext.current
+    var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
+    // cała lista koktajli (tę samą co w CocktailList)
+    val allCocktails = remember {
+        listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini")
+    }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun CocktailListPreview() {
-//    MobileCocktailsTheme {
-//        CocktailList()
-//    }
-//}
+
+    val favoritesSet = remember { loadFavorites(context) }
+    val favorites = allCocktails.filter { it in favoritesSet }
+    val contextCockTail = LocalContext.current
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scaffoldState = rememberScaffoldState(drawerState = drawerState)
+    val scope = rememberCoroutineScope()
+
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = {
+            androidx.compose.material.TopAppBar(
+                title = { Text("Ulubione") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        scope.launch { drawerState.open() }
+                    }) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Menu")
+                    }
+                }
+            )
+        },
+        drawerContent = {
+            Text("Główna Strona",
+                Modifier
+                    .fillMaxWidth().padding(16.dp)
+                    .clickable {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("cocktailList") { popUpTo("cocktailList") }
+                    }
+            )
+            Text("★ Ulubione",
+                Modifier
+                    .fillMaxWidth().padding(16.dp)
+                    .clickable {
+                        scope.launch { drawerState.close() }
+                        navController.navigate("favorites") { popUpTo("cocktailList") }
+                    }
+            )
+        },
+     content = { innerPadding ->
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(4.dp)
+        ) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(1),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 4.dp, top = 24.dp)
+            ) {
+                items(favorites) { cocktail ->
+                    Card(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
+                                selectedCocktail = cocktail
+                                val intent = Intent(contextCockTail,CocktailActivity::class.java)
+                                intent.putExtra("cocktail_name", selectedCocktail)
+                                contextCockTail.startActivity(intent)
+                            },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val context = LocalContext.current
+                            val imageName = cocktail
+                                .lowercase()
+                                .replace(" ", "")
+                                .replace("ñ", "n")
+                                .replace("[^a-z0-9_]".toRegex(), "")
+                            val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+
+                            Image(
+                                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                                contentDescription = "$cocktail Image",
+                                modifier = Modifier
+                                    .height(270.dp)
+                                    .fillMaxWidth()
+                                    .background(Color.DarkGray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text(
+                                text = cocktail,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            }
+
+        }
+    })
+}
