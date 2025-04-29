@@ -187,6 +187,7 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 Icon(Icons.Outlined.Info, contentDescription = "Pokaż składniki")
             }
         },
+        //test
         content = { innerPadding ->
             val scrollState = rememberScrollState()
             Column(
