@@ -165,7 +165,7 @@ fun CocktailList(navController: NavController) {
         scaffoldState = scaffoldState,
         topBar = {
             androidx.compose.material.TopAppBar(
-                title = { Text("Witamy w Mobilnych Koktajlach") },
+                title = { Text("Witamy w MobileCocktails\u00AE") },
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch { drawerState.open() }
@@ -299,7 +299,7 @@ fun FavoritesList(navController: NavController) {
         scaffoldState = scaffoldState,
         topBar = {
             androidx.compose.material.TopAppBar(
-                title = { Text("Ulubione") },
+                title = { Text("\u2B50 Ulubione \u2B50") },
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch { drawerState.open() }
