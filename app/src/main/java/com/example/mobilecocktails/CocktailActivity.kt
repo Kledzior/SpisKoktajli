@@ -149,6 +149,18 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 listOf("40ml Wódka", "20ml Likier kawowy (np. Kahlua)", "30ml Świeżo parzona kawa espresso", "10ml Syrop cukrowy", "Lód", "3 ziarna kawy do dekoracji"),
                 "Do shakera z lodem dodaj wódkę, likier kawowy, espresso i syrop cukrowy. Wstrząśnij energicznie przez około 15 sekund. Przelej do schłodzonego kieliszka koktajlowego przez sitko barmańskie. Udekoruj trzema ziarnami kawy. Wypij w ciagu 60 sekund"
             ),
+            "★Lemonade★" to Pair(
+                listOf("120ml Woda gazowana", "60ml Sok z cytryny", "30ml Syrop cukrowy", "Lód", "Plasterek cytryny do dekoracji", "Listki mięty"),
+                "Do szklanki typu highball wsyp lód, dodaj sok z cytryny i syrop cukrowy. Wymieszaj. Dolej wodę gazowaną i delikatnie zamieszaj. Udekoruj plasterkiem cytryny i listkami mięty."
+            ),
+            "★Shirley Temple★" to Pair(
+                listOf("150ml Sprite lub 7Up", "30ml Grenadyna", "Lód", "1 Wiśnia koktajlowa", "Plasterek cytryny lub pomarańczy"),
+                "Napełnij szklankę lodem. Wlej grenadynę, a następnie dopełnij napojem gazowanym (Sprite/7Up). Delikatnie zamieszaj. Udekoruj wiśnią koktajlową i plasterkiem cytrusa."
+            ),
+            "★Virgin Mojito★" to Pair(
+                listOf("10 listków mięty", "20ml Sok z limonki", "30ml Syrop cukrowy", "100ml Woda gazowana", "Lód kruszony", "Plasterki limonki do dekoracji"),
+                "W szklance rozgnieć miętę z sokiem z limonki i syropem cukrowym. Dodaj kruszony lód i dopełnij wodą gazowaną. Zamieszaj delikatnie i udekoruj plasterkami limonki oraz miętą."
+            )
         )
     }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
