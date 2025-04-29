@@ -318,6 +318,8 @@ fun AppToolbarWithImage(cocktailName: String?) {
         ?.replace("[^a-z0-9_]".toRegex(), "")
     val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
 
+    val scrollState = rememberScrollState()
+
     TopAppBar(
         title = {
             if (imageResId != 0) {
