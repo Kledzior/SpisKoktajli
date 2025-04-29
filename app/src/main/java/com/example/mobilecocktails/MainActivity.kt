@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -138,19 +140,32 @@ fun CocktailList(navController: NavController) {
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini")
     }
 
-    var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
 
+
+
+    val tabs = listOf("Alkoholowe", "Bezalkoholowe")
+    var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
+
+    //val alcoholicCocktails = listOf("Whiskey Sour", "Mojito", "Negroni")
+    val nonAlcoholicCocktails = listOf("★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
+
+    val currentList = if (selectedTabIndex == 0) cocktails else nonAlcoholicCocktails
+
+
+
+    var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
     //val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val contextCockTail = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val scaffoldState = rememberScaffoldState(drawerState = drawerState)
+
     Scaffold(
         scaffoldState = scaffoldState,
         topBar = {
             androidx.compose.material.TopAppBar(
-                title = { Text("Witamy w aplikacji z koktajlami") },
+                title = { Text("Witamy w MobileCocktails\u00AE") },
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch { drawerState.open() }
@@ -162,38 +177,60 @@ fun CocktailList(navController: NavController) {
         },
 
         drawerContent = {
-            Text("Główna Strona",
-                Modifier
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(300.dp)
+                    .padding(16.dp)
+            ){
+            Text(
+                text = "\uD83C\uDFE0 Główna Strona \uD83C\uDFE0", fontSize = 20.sp,
+                modifier = Modifier
+
                     .fillMaxWidth().padding(16.dp)
                     .clickable {
                         scope.launch { drawerState.close() }
                         navController.navigate("cocktailList") { popUpTo("cocktailList") }
                     }
+                    .padding(top = 50.dp)
             )
-            Text("★ Ulubione",
-                Modifier
-                    .fillMaxWidth().padding(16.dp)
+            Text(
+                text = "\u2B50 Ulubione \u2B50", fontSize = 20.sp,
+                modifier = Modifier
+                    .fillMaxWidth().padding(10.dp)
                     .clickable {
                         scope.launch { drawerState.close() }
                         navController.navigate("favorites") { popUpTo("cocktailList") }
                     }
+                    .padding(top = 30.dp)
             )
+        }
         },
         content = { innerPadding ->
 
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(4.dp)
-            ) {
+                    .fillMaxSize()
+            )
+            {
+                androidx.compose.material3.TabRow(selectedTabIndex = selectedTabIndex) {
+                    tabs.forEachIndexed { index, title ->
+                        androidx.compose.material3.Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = { Text(title) }
+                        )
+                    }
+                }
+
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(1),
                     modifier = Modifier
                         .weight(1f)
-                        .padding(end = 4.dp, top = 24.dp)
+                        .padding(end = 4.dp, top = 20.dp)
                 ) {
-                    items(cocktails) { cocktail ->
+                    items(currentList) { cocktail ->
                         Card(
                             modifier = Modifier
                                 .padding(4.dp)
@@ -204,7 +241,7 @@ fun CocktailList(navController: NavController) {
                                     val intent = Intent(contextCockTail,CocktailActivity::class.java)
                                     intent.putExtra("cocktail_name", selectedCocktail)
                                     contextCockTail.startActivity(intent)
-                                },
+                                           },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -214,6 +251,7 @@ fun CocktailList(navController: NavController) {
                                     .replace(" ", "")
                                     .replace("ñ", "n")
                                     .replace("[^a-z0-9_]".toRegex(), "")
+                                    .replace("★", "")
                                 val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
 
                                 Image(
@@ -246,7 +284,7 @@ fun FavoritesList(navController: NavController) {
     var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
     // cała lista koktajli (tę samą co w CocktailList)
     val allCocktails = remember {
-        listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini")
+        listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini","★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
     }
 
 
@@ -261,7 +299,7 @@ fun FavoritesList(navController: NavController) {
         scaffoldState = scaffoldState,
         topBar = {
             androidx.compose.material.TopAppBar(
-                title = { Text("Ulubione") },
+                title = { Text("\u2B50 Ulubione \u2B50") },
                 navigationIcon = {
                     IconButton(onClick = {
                         scope.launch { drawerState.open() }
@@ -272,80 +310,95 @@ fun FavoritesList(navController: NavController) {
             )
         },
         drawerContent = {
-            Text("Główna Strona",
-                Modifier
-                    .fillMaxWidth().padding(16.dp)
-                    .clickable {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("cocktailList") { popUpTo("cocktailList") }
-                    }
-            )
-            Text("★ Ulubione",
-                Modifier
-                    .fillMaxWidth().padding(16.dp)
-                    .clickable {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("favorites") { popUpTo("cocktailList") }
-                    }
-            )
-        },
-        content = { innerPadding ->
-
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(4.dp)
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
+                    .fillMaxHeight()
+                    .width(300.dp)
+                    .padding(16.dp)
+            ){
+                Text(
+                    text = "\uD83C\uDFE0 Główna Strona \uD83C\uDFE0", fontSize = 20.sp,
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp, top = 24.dp)
-                ) {
-                    items(favorites) { cocktail ->
-                        Card(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .fillMaxWidth()
-                                .clickable {
-                                    Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
-                                    selectedCocktail = cocktail
-                                    val intent = Intent(contextCockTail,CocktailActivity::class.java)
-                                    intent.putExtra("cocktail_name", selectedCocktail)
-                                    contextCockTail.startActivity(intent)
-                                },
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                val context = LocalContext.current
-                                val imageName = cocktail
-                                    .lowercase()
-                                    .replace(" ", "")
-                                    .replace("ñ", "n")
-                                    .replace("[^a-z0-9_]".toRegex(), "")
-                                val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
 
-                                Image(
-                                    painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
-                                    contentDescription = "$cocktail Image",
-                                    modifier = Modifier
-                                        .height(270.dp)
-                                        .fillMaxWidth()
-                                        .background(Color.DarkGray),
-                                    contentScale = ContentScale.Crop
-                                )
-                                Text(
-                                    text = cocktail,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.padding(8.dp),
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                            }
+                        .fillMaxWidth().padding(16.dp)
+                        .clickable {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("cocktailList") { popUpTo("cocktailList") }
+                        }
+                        .padding(top = 50.dp)
+                )
+                Text(
+                    text = "\u2B50 Ulubione \u2B50", fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth().padding(10.dp)
+                        .clickable {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("favorites") { popUpTo("cocktailList") }
+                        }
+                        .padding(top = 30.dp)
+                )
+            }
+        },
+     content = { innerPadding ->
+
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(4.dp)
+        )
+        {
+
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(1),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 4.dp, top = 24.dp)
+            ) {
+                items(favorites) { cocktail ->
+                    Card(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
+                                selectedCocktail = cocktail
+                                val intent = Intent(contextCockTail,CocktailActivity::class.java)
+                                intent.putExtra("cocktail_name", selectedCocktail)
+                                contextCockTail.startActivity(intent)
+                            },
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val context = LocalContext.current
+                            val imageName = cocktail
+                                .lowercase()
+                                .replace(" ", "")
+                                .replace("ñ", "n")
+                                .replace("[^a-z0-9_]".toRegex(), "")
+                                .replace("★", "")
+                            val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+
+                            Image(
+                                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                                contentDescription = "$cocktail Image",
+                                modifier = Modifier
+                                    .height(270.dp)
+                                    .fillMaxWidth()
+                                    .background(Color.DarkGray),
+                                contentScale = ContentScale.Crop
+                            )
+                            Text(
+                                text = cocktail,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(8.dp),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
                 }
-
             }
-        })
+
+        }
+    })
 }

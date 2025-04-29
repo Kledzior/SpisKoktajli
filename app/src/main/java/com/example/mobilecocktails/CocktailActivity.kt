@@ -54,22 +54,37 @@ import androidx.compose.ui.unit.dp
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 import kotlinx.coroutines.launch
 import android.util.Log
+import androidx.compose.foundation.layout.Arrangement
+
+
+
+
+import androidx.compose.material.rememberDrawerState
+import androidx.compose.material.DrawerValue
+
+
+import androidx.compose.material.icons.filled.Menu
 
 import android.content.Context
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
+
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.foundation.clickable
-import androidx.compose.material.rememberDrawerState
-import androidx.compose.material.DrawerValue
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material.*
-import androidx.compose.material.icons.filled.Menu
+
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.ArrowBack
+
+
+
+
+
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -162,6 +177,18 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 listOf("40ml Wódka", "20ml Likier kawowy (np. Kahlua)", "30ml Świeżo parzona kawa espresso", "10ml Syrop cukrowy", "Lód", "3 ziarna kawy do dekoracji"),
                 "Do shakera z lodem dodaj wódkę, likier kawowy, espresso i syrop cukrowy. Wstrząśnij energicznie przez około 15 sekund. Przelej do schłodzonego kieliszka koktajlowego przez sitko barmańskie. Udekoruj trzema ziarnami kawy. Wypij w ciagu 60 sekund"
             ),
+            "★Lemonade★" to Pair(
+                listOf("120ml Woda gazowana", "60ml Sok z cytryny", "30ml Syrop cukrowy", "Lód", "Plasterek cytryny do dekoracji", "Listki mięty"),
+                "Do szklanki typu highball wsyp lód, dodaj sok z cytryny i syrop cukrowy. Wymieszaj. Dolej wodę gazowaną i delikatnie zamieszaj. Udekoruj plasterkiem cytryny i listkami mięty."
+            ),
+            "★Shirley Temple★" to Pair(
+                listOf("150ml Sprite lub 7Up", "30ml Grenadyna", "Lód", "1 Wiśnia koktajlowa", "Plasterek cytryny lub pomarańczy"),
+                "Napełnij szklankę lodem. Wlej grenadynę, a następnie dopełnij napojem gazowanym (Sprite/7Up). Delikatnie zamieszaj. Udekoruj wiśnią koktajlową i plasterkiem cytrusa."
+            ),
+            "★Virgin Mojito★" to Pair(
+                listOf("10 listków mięty", "20ml Sok z limonki", "30ml Syrop cukrowy", "100ml Woda gazowana", "Lód kruszony", "Plasterki limonki do dekoracji"),
+                "W szklance rozgnieć miętę z sokiem z limonki i syropem cukrowym. Dodaj kruszony lód i dopełnij wodą gazowaną. Zamieszaj delikatnie i udekoruj plasterkami limonki oraz miętą."
+            )
         )
     }
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -173,6 +200,7 @@ fun CocktailListWithDetails(cocktailName: String?) {
     val (ingredients, preparation) = cocktailsDetails[cocktailName] ?: Pair(emptyList(), "Brak danych")
     val context = LocalContext.current
     var selectedCocktail by rememberSaveable { mutableStateOf(cocktailName) }
+    val scaffoldState = rememberScaffoldState(drawerState = drawerState)
 
     val imageName = selectedCocktail
         ?.lowercase()
@@ -181,10 +209,13 @@ fun CocktailListWithDetails(cocktailName: String?) {
         ?.replace("[^a-z0-9_]".toRegex(), "")
     val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
     val activity = LocalActivity.current as? ComponentActivity
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        scaffoldState = scaffoldState,
         topBar = {
-            TopAppBar(
+            androidx.compose.material.TopAppBar(
                 title = { Text(text = selectedCocktail ?: "Koktajl") },
 
                 navigationIcon = {
@@ -193,8 +224,27 @@ fun CocktailListWithDetails(cocktailName: String?) {
                     }
                 }
             )
-        }
-    ) { innerPadding ->
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    val (ingredients, _) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "")
+                    val message = if (ingredients.isNotEmpty()) {
+                        "Składniki: ${ingredients.joinToString(", ")}"
+                    } else {
+                        "Brak danych dla $selectedCocktail"
+                    }
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(message)
+                    }
+                }
+            ) {
+                Icon(Icons.Outlined.Info, contentDescription = "Pokaż składniki")
+            }
+        })
+    { innerPadding ->
         LazyColumn(
             state = scrollState,
             modifier = Modifier
@@ -202,67 +252,80 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 .padding(innerPadding)
         ) {
 
-                item {
-                    val scrollOffset = minOf(scrollState.firstVisibleItemScrollOffset, with(LocalDensity.current) { maxHeight.dp.toPx() }.toInt())
+            item {
+                val scrollOffset = minOf(scrollState.firstVisibleItemScrollOffset, with(LocalDensity.current) { maxHeight.dp.toPx() }.toInt())
 
-                    Image(
-                        painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
-                        contentDescription = "$selectedCocktail Image",
-                        contentScale = ContentScale.Crop,
+                Image(
+                    painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                    contentDescription = "$selectedCocktail Image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .height(maxHeight.dp)
+                        .graphicsLayer {
+                            translationY = -scrollOffset.toFloat()
+                        }
+                        .fillMaxWidth()
+                )
+            }
+
+            item {
+                Text(
+                    text = "Wybrany: $cocktailName",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier
+                        .padding(25.dp)
+                )
+                if (selectedCocktail != null) {
+                    Row(
                         modifier = Modifier
-                            .height(maxHeight.dp)
-                            .graphicsLayer {
-                                translationY = -scrollOffset.toFloat()
-                            }
                             .fillMaxWidth()
-                    )
+                            .padding(end = 25.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        FavoriteStar(selectedCocktail!!)
+                    }
                 }
+            }
 
-                item {
-                    Text(
-                        text = "Wybrany: $cocktailName",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier
-                            .padding(25.dp)
-                    )
-                }
 
-                item {
-                    Text(
-                        text = "Składniki:",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(start = 25.dp, top = 8.dp)
-                    )
-                }
+            item {
+                Text(
+                    text = "Składniki:",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 25.dp, top = 8.dp)
+                )
+            }
 
-                items(ingredients) { ingredient ->
-                    Text(
-                        text = "- $ingredient",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 40.dp, top = 4.dp)
-                    )
-                }
+            items(ingredients) { ingredient ->
+                Text(
+                    text = "- $ingredient",
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 40.dp, top = 4.dp)
+                )
+            }
 
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
 
-                    Text(
-                        text = "Sposób przygotowania:",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(start = 25.dp)
-                    )
+                Text(
+                    text = "Sposób przygotowania:",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(start = 25.dp)
+                )
 
-                    Text(
-                        text = preparation,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 40.dp, top = 4.dp, bottom = 16.dp)
-                    )
-                    val secondsList = extractSecondsFromText(preparation)
-                    CountdownTimer(secondsList)
-                }
+                Text(
+                    text = preparation,
+                    style = MaterialTheme.typography.bodyLarge,
+                    modifier = Modifier.padding(start = 40.dp, top = 4.dp, bottom = 16.dp)
+                )
+                val secondsList = extractSecondsFromText(preparation)
+                CountdownTimer(secondsList)
+            }
         }
     }
 }
+
+
 
 
 
