@@ -26,11 +26,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material.Scaffold
+import androidx.compose.material.TopAppBar
+//import androidx.compose.material.icons.Icon
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,12 +54,30 @@ import androidx.compose.ui.unit.dp
 import com.example.mobilecocktails.ui.theme.MobileCocktailsTheme
 import kotlinx.coroutines.launch
 import android.util.Log
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
+
+import android.content.Context
+import androidx.activity.compose.LocalActivity
+import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.clickable
+import androidx.compose.material.rememberDrawerState
+import androidx.compose.material.DrawerValue
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.material.*
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
 
 class CocktailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -69,12 +89,17 @@ class CocktailActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MobileCocktailsTheme {
-                 CocktailListWithDetails(cocktaiilName)
+                CocktailListWithDetails(cocktaiilName)
 
-                }
             }
         }
     }
+}
+
+fun PaddingValues.coercedTop(minTop: Dp): Dp {
+    return this.calculateTopPadding().coerceAtLeast(minTop)
+}
+
 
 @Composable
 fun CocktailListWithDetails(cocktailName: String?) {
@@ -139,97 +164,116 @@ fun CocktailListWithDetails(cocktailName: String?) {
             ),
         )
     }
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+    val scrollState = rememberLazyListState()
+    val maxHeight = 270f
+    val minHeight = 56f
 
-
+    val (ingredients, preparation) = cocktailsDetails[cocktailName] ?: Pair(emptyList(), "Brak danych")
+    val context = LocalContext.current
     var selectedCocktail by rememberSaveable { mutableStateOf(cocktailName) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
+    val imageName = selectedCocktail
+        ?.lowercase()
+        ?.replace(" ", "")
+        ?.replace("ñ", "n")
+        ?.replace("[^a-z0-9_]".toRegex(), "")
+    val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+    val activity = LocalActivity.current as? ComponentActivity
 
     Scaffold(
         topBar = {
-            AppToolbarWithImage(selectedCocktail)
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+            TopAppBar(
+                title = { Text(text = selectedCocktail ?: "Koktajl") },
 
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    val (ingredients, _) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "")
-                    val message = if (ingredients.isNotEmpty()) {
-                        "Składniki: ${ingredients.joinToString(", ")}"
-                    } else {
-                        "Brak danych dla $selectedCocktail"
-                    }
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(message)
+                navigationIcon = {
+                    IconButton(onClick = { activity?.onBackPressedDispatcher?.onBackPressed() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Wstecz")
                     }
                 }
-            ) {
-                Icon(Icons.Outlined.Info, contentDescription = "Pokaż składniki")
-            }
-        },
-        content = { innerPadding ->
+            )
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            state = scrollState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
 
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(4.dp)
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp, top = 24.dp)
-                ) {
-                }
+                item {
+                    val scrollOffset = minOf(scrollState.firstVisibleItemScrollOffset, with(LocalDensity.current) { maxHeight.dp.toPx() }.toInt())
 
-                val scrollState = rememberScrollState()
-
-                Column(
-                    modifier = Modifier
-                        .weight(2f)
-                        .verticalScroll(scrollState)
-                        .padding(top = 24.dp)
-                ) {
-                    val (ingredients, preparation) = cocktailsDetails[selectedCocktail] ?: Pair(emptyList(), "Brak danych")
-
-                    Text(
-                        text = "Wybrany: $selectedCocktail",
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                    Image(
+                        painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                        contentDescription = "$selectedCocktail Image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .height(maxHeight.dp)
+                            .graphicsLayer {
+                                translationY = -scrollOffset.toFloat()
+                            }
+                            .fillMaxWidth()
                     )
+                }
+
+                item {
+                    Text(
+                        text = "Wybrany: $cocktailName",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .padding(25.dp)
+                    )
+                }
+
+                item {
                     Text(
                         text = "Składniki:",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(start = 25.dp, top = 8.dp)
                     )
-                    ingredients.forEach { ingredient ->
-                        Text(
-                            text = "- $ingredient",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-                        )
-                    }
+                }
+
+                items(ingredients) { ingredient ->
+                    Text(
+                        text = "- $ingredient",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 40.dp, top = 4.dp)
+                    )
+                }
+
+                item {
                     Spacer(modifier = Modifier.height(16.dp))
+
                     Text(
                         text = "Sposób przygotowania:",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(start = 25.dp)
                     )
+
                     Text(
                         text = preparation,
                         style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                        modifier = Modifier.padding(start = 40.dp, top = 4.dp, bottom = 16.dp)
                     )
-
                     val secondsList = extractSecondsFromText(preparation)
                     CountdownTimer(secondsList)
                 }
-            }
         }
-    )
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
 fun extractSecondsFromText(text: String): List<Int> {
@@ -307,44 +351,54 @@ fun CountdownTimer(durationSeconds: List<Int>) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppToolbarWithImage(cocktailName: String?) {
-    val context = LocalContext.current
-    val imageName = cocktailName
-        ?.lowercase()
-        ?.replace(" ", "")
-        ?.replace("ñ", "n")
-        ?.replace("[^a-z0-9_]".toRegex(), "")
-    val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+fun saveFavorites(context: Context, favorites: Set<String>) {
+    val sharedPreferences = context.getSharedPreferences("favorites_prefs", Context.MODE_PRIVATE)
+    sharedPreferences.edit()
+        .putStringSet("favorite_cocktails", favorites)
+        .apply()
+}
 
-    TopAppBar(
-        title = {
-            if (imageResId != 0) {
-                Image(
-                    painter = painterResource(id = imageResId),
-                    contentDescription = "$cocktailName image",
-                    modifier = Modifier
-                        .height(40.dp)
-                        .fillMaxWidth(),
-                    contentScale = ContentScale.Fit
-                )
+fun loadFavorites(context: Context): MutableSet<String> {
+    val sharedPreferences = context.getSharedPreferences("favorites_prefs", Context.MODE_PRIVATE)
+    return sharedPreferences.getStringSet("favorite_cocktails", emptySet())?.toMutableSet() ?: mutableSetOf()
+}
+
+@Composable
+fun FavoriteStar(cocktailName: String) {
+    val context = LocalContext.current
+    // Wczytaj ulubione koktajle z pamięci
+    var favorites by remember { mutableStateOf(loadFavorites(context).toMutableSet()) }
+
+    // Używamy rememberUpdatedState, aby przechować aktualną wersję "favorites" w UI
+    val currentFavorites = rememberUpdatedState(favorites)
+
+    // Sprawdzamy, czy koktajl jest w ulubionych
+    val isFavorite = currentFavorites.value.contains(cocktailName)
+    val HoneyYellow = Color(0xFFFFC107)
+    // Kliknięcie na gwiazdkę
+    Icon(
+        imageVector = Icons.Default.Star,
+        contentDescription = null,
+        tint = if (isFavorite) HoneyYellow else Color.Gray,
+        modifier = Modifier.clickable {
+            // Zmiana statusu ulubionego
+            val updatedFavorites = currentFavorites.value.toMutableSet() // Pobierz najnowszą wersję
+            if (isFavorite) {
+                updatedFavorites.remove(cocktailName)
             } else {
-                Text(text = cocktailName ?: "Brak nazwy", style = MaterialTheme.typography.titleMedium)
+                updatedFavorites.add(cocktailName)
             }
-        },
-//        navigationIcon = {
-//            IconButton(onClick = {
-//                // Możesz zamknąć aktywność
-//                (context as? ComponentActivity)?.finish()
-//            }) {
-//                Icon(Icons.Default.ArrowBack, contentDescription = "Wróć")
-//            }
-//        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary,
-            actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-        )
+
+            // Zapisz zmiany w SharedPreferences
+            saveFavorites(context, updatedFavorites)
+
+            // Ustaw zaktualizowaną listę ulubionych, aby UI odświeżyło się
+            favorites = updatedFavorites
+        }
     )
 }
+
+
+
+
+
