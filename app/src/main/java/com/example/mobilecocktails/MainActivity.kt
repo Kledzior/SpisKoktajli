@@ -82,6 +82,7 @@ import android.graphics.drawable.ColorDrawable
 import android.widget.ImageView
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -412,10 +413,13 @@ fun FavoritesList(navController: NavController) {
 fun LoadingScreen(navController: NavController)
 {
     val context = LocalContext.current
+
     val allCocktails = remember {
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini","★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
     }
 
+    val uniqueRandomList = (0..allCocktails.size-1).shuffled().take(3)
+    var vCounter by remember { mutableStateOf(0) }
     val imageResIds = remember {
         allCocktails.mapNotNull { cocktail ->
             val imageName = cocktail
@@ -428,7 +432,7 @@ fun LoadingScreen(navController: NavController)
             if (resId != 0) resId else null
         }
     }
-    var currentImageIndex by remember { mutableStateOf(0)}
+    var currentImageIndex by remember { mutableStateOf(uniqueRandomList[0])}
     val imageViewRef = remember { mutableStateOf<ImageView?>(null) }
 
     LaunchedEffect(currentImageIndex) {
@@ -445,8 +449,10 @@ fun LoadingScreen(navController: NavController)
 
             delay(1500) // Czekaj aż obrazek zniknie
 
-            if (currentImageIndex < imageResIds.size - 1) {
-                currentImageIndex++
+            if (vCounter < 2) {
+                vCounter += 1
+
+                currentImageIndex = uniqueRandomList[vCounter]
             } else {
                 navController.navigate("splashScreen") {
                     popUpTo("loadingScreen") { inclusive = true }
