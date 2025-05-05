@@ -231,7 +231,7 @@ fun CocktailList(navController: NavController) {
                 }
 
                 LazyVerticalGrid(
-                    columns = GridCells.Fixed(1),
+                    columns = GridCells.Adaptive(minSize = 200.dp),
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 4.dp, top = 20.dp)
@@ -240,7 +240,8 @@ fun CocktailList(navController: NavController) {
                         Card(
                             modifier = Modifier
                                 .padding(4.dp)
-                                .fillMaxWidth()
+                                .widthIn(max = 600.dp) // Dobrze wygląda na tabletach
+                                .align(Alignment.CenterHorizontally) // Wyśrodkuj
                                 .clickable {
                                     Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
                                     selectedCocktail = cocktail
@@ -288,7 +289,6 @@ fun CocktailList(navController: NavController) {
 fun FavoritesList(navController: NavController) {
     val context = LocalContext.current
     var selectedCocktail by rememberSaveable { mutableStateOf("Cosmopolitan") }
-    // cała lista koktajli (tę samą co w CocktailList)
     val allCocktails = remember {
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini","★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
     }
@@ -356,7 +356,7 @@ fun FavoritesList(navController: NavController) {
         {
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(1),
+                columns = GridCells.Adaptive(minSize = 200.dp),
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 4.dp, top = 24.dp)
