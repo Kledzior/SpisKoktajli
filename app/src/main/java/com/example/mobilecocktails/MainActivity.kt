@@ -418,7 +418,7 @@ fun LoadingScreen(navController: NavController)
         listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini","★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
     }
 
-    val uniqueRandomList = (0..allCocktails.size).shuffled().take(3)
+    val uniqueRandomList = (0..allCocktails.size-1).shuffled().take(3)
     var vCounter by remember { mutableStateOf(0) }
     val imageResIds = remember {
         allCocktails.mapNotNull { cocktail ->
@@ -451,6 +451,7 @@ fun LoadingScreen(navController: NavController)
 
             if (vCounter < 2) {
                 vCounter += 1
+
                 currentImageIndex = uniqueRandomList[vCounter]
             } else {
                 navController.navigate("splashScreen") {
