@@ -429,33 +429,25 @@ fun loadFavorites(context: Context): MutableSet<String> {
 @Composable
 fun FavoriteStar(cocktailName: String) {
     val context = LocalContext.current
-    // Wczytaj ulubione koktajle z pamięci
     var favorites by remember { mutableStateOf(loadFavorites(context).toMutableSet()) }
 
-    // Używamy rememberUpdatedState, aby przechować aktualną wersję "favorites" w UI
     val currentFavorites = rememberUpdatedState(favorites)
 
-    // Sprawdzamy, czy koktajl jest w ulubionych
     val isFavorite = currentFavorites.value.contains(cocktailName)
     val HoneyYellow = Color(0xFFFFC107)
-    // Kliknięcie na gwiazdkę
     Icon(
         imageVector = Icons.Default.Star,
         contentDescription = null,
         tint = if (isFavorite) HoneyYellow else Color.Gray,
         modifier = Modifier.clickable {
-            // Zmiana statusu ulubionego
-            val updatedFavorites = currentFavorites.value.toMutableSet() // Pobierz najnowszą wersję
+            val updatedFavorites = currentFavorites.value.toMutableSet()
             if (isFavorite) {
                 updatedFavorites.remove(cocktailName)
             } else {
                 updatedFavorites.add(cocktailName)
             }
-
-            // Zapisz zmiany w SharedPreferences
             saveFavorites(context, updatedFavorites)
 
-            // Ustaw zaktualizowaną listę ulubionych, aby UI odświeżyło się
             favorites = updatedFavorites
         }
     )
