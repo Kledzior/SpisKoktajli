@@ -67,6 +67,7 @@ import androidx.compose.material.rememberScaffoldState
 import androidx.compose.material.*
 import androidx.compose.material.icons.filled.Menu
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.compose.material3.Button
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.grid.items
@@ -76,7 +77,11 @@ import kotlinx.coroutines.launch
 import androidx.navigation.NavOptionsBuilder
 import androidx.compose.material.Card
 import kotlin.text.lowercase
-
+import android.animation.ObjectAnimator
+import android.graphics.drawable.ColorDrawable
+import android.widget.ImageView
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.viewinterop.AndroidView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,17 +98,17 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController, startDestination = "splashScreen") {
+    NavHost(navController, startDestination = "loadingScreen") {
+        composable("loadingScreen")
+        {
+            LoadingScreen(navController)
+        }
+
         composable("splashScreen") {
             SplashScreen(navController)
         }
         composable("cocktailList") {
             CocktailList(navController)
-
-//         }
-//         composable("cocktailDetail/{cocktailName}") { backStackEntry ->
-//             val cocktailName = backStackEntry.arguments?.getString("cocktailName")
-//             CocktailListWithDetails(cocktailName ?: "Unknown")
 
         }
 
@@ -401,4 +406,69 @@ fun FavoritesList(navController: NavController) {
 
         }
     })
+}
+
+@Composable
+fun LoadingScreen(navController: NavController)
+{
+    val context = LocalContext.current
+    val allCocktails = remember {
+        listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini","★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
+    }
+
+    val imageResIds = remember {
+        allCocktails.mapNotNull { cocktail ->
+            val imageName = cocktail
+                .lowercase()
+                .replace(" ", "")
+                .replace("ñ", "n")
+                .replace("[^a-z0-9_]".toRegex(), "")
+                .replace("★", "")
+            val resId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+            if (resId != 0) resId else null
+        }
+    }
+    var currentImageIndex by remember { mutableStateOf(0)}
+    val imageViewRef = remember { mutableStateOf<ImageView?>(null) }
+
+    LaunchedEffect(currentImageIndex) {
+        val imageView = imageViewRef.value
+        imageView?.let {
+            // Początek poza ekranem po prawej
+            it.translationX = 1000f
+            it.setImageResource(imageResIds[currentImageIndex])
+
+            // Animacja przesuwania w lewo
+            val animator = ObjectAnimator.ofFloat(it, "translationX", 1000f, -1000f)
+            animator.duration = 1500
+            animator.start()
+
+            delay(1500) // Czekaj aż obrazek zniknie
+
+            if (currentImageIndex < imageResIds.size - 1) {
+                currentImageIndex++
+            } else {
+                navController.navigate("splashScreen") {
+                    popUpTo("loadingScreen") { inclusive = true }
+                }
+            }
+        }
+    }
+    AndroidView(
+        modifier = Modifier
+            .fillMaxSize(),
+            factory = {
+                context ->
+                ImageView(context).apply{
+                    scaleType = ImageView.ScaleType.CENTER_CROP
+                    imageViewRef.value = this
+//                    background = null
+                    setBackgroundColor(Color.Red.toArgb())
+
+                }
+            },
+            update = { imageView ->
+            }
+    )
+
 }
