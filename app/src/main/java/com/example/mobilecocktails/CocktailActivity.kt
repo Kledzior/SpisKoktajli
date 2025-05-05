@@ -250,6 +250,9 @@ fun CocktailListWithDetails(cocktailName: String?) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.surface),
+
+
         ) {
 
             item {
@@ -272,6 +275,7 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 Text(
                     text = "Wybrany: $cocktailName",
                     style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .padding(25.dp)
                 )
@@ -292,7 +296,9 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 Text(
                     text = "Składniki:",
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 25.dp, top = 8.dp)
+
                 )
             }
 
@@ -300,6 +306,7 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 Text(
                     text = "- $ingredient",
                     style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 40.dp, top = 4.dp)
                 )
             }
@@ -309,12 +316,14 @@ fun CocktailListWithDetails(cocktailName: String?) {
 
                 Text(
                     text = "Sposób przygotowania:",
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(start = 25.dp)
                 )
 
                 Text(
                     text = preparation,
+                    color = MaterialTheme.colorScheme.primary,
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(start = 40.dp, top = 4.dp, bottom = 16.dp)
                 )
