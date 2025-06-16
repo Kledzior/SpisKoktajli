@@ -4,7 +4,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+
+    id("com.google.devtools.ksp")
+
     id("com.google.gms.google-services")
+
 }
 
 android {
@@ -89,12 +93,20 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+
+    //Dependencies to save data in local database using Room
+    val room_version = "2.7.1"
+    implementation("androidx.room:room-runtime:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+    
     //google firebase
     implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation ("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-auth")
     implementation ("com.google.firebase:firebase-auth-ktx")
+
 
 
 }
