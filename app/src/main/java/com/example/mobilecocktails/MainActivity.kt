@@ -466,9 +466,20 @@ fun FavoritesList(navController: NavController) {
                         .clickable {
                             scope.launch {
                                 drawerState.close() // zamknij drawer
-                                FirebaseAuth.getInstance().signOut() // wyloguj
-                                navController.navigate("login") {
-                                    popUpTo("cocktailList") { inclusive = true }
+
+                                val googleSignInClient = GoogleSignIn.getClient(
+                                    context,
+                                    GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestIdToken("878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com")
+                                        .requestEmail()
+                                        .build()
+                                )
+
+                                googleSignInClient.revokeAccess().addOnCompleteListener {
+                                    FirebaseAuth.getInstance().signOut() // wyloguj Firebase
+                                    navController.navigate("login") {
+                                        popUpTo("cocktailList") { inclusive = true }
+                                    }
                                 }
                             }
                         }
