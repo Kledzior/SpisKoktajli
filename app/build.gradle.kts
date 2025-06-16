@@ -21,19 +21,27 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("app/kluczeAPI.jks")  // <- tu podaj ścieżkę do swojego pliku .jks
+            storePassword = "androidsha" // <- wpisz swoje hasło
+            keyAlias = "release_key"                // <- alias klucza
+            keyPassword = "androidsha"     // <- hasło do klucza (zazwyczaj takie samo)
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             isShrinkResources = false
-
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release") // <-- tutaj podłączasz konfigurację
         }
     }
 
@@ -54,6 +62,7 @@ android {
         kotlinCompilerExtensionVersion = "1.5.3"
     }
 }
+
 
 dependencies {
     // Core
