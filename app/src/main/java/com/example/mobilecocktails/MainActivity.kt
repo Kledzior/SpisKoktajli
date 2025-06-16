@@ -82,12 +82,29 @@ import android.graphics.drawable.ColorDrawable
 import android.widget.ImageView
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.room.Room
+import com.example.mobilecocktails.LocalDatabase.CocktailDatabase
+import com.example.mobilecocktails.LocalDatabase.populateCocktails
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        runBlocking {
+            val db = Room.databaseBuilder(
+                applicationContext,
+                CocktailDatabase::class.java,
+                "cocktails-db"
+            ).build()
+            val cocktailDao = db.cocktailDao()
+            if (cocktailDao.getAll().isEmpty()) {
+                populateCocktails(applicationContext, cocktailDao)
+            }
+        }
         setContent {
             MobileCocktailsTheme {
                 AppNavigation()
@@ -95,6 +112,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -414,13 +432,23 @@ fun LoadingScreen(navController: NavController)
 {
     val context = LocalContext.current
 
-    val allCocktails = remember {
-        listOf("Cosmopolitan", "Whiskey Sour", "Piña Colada", "Mai Tai","Daiquiri", "Manhattan","Mojito", "Gin Fizz", "Caipirinha", "Long Island Iced Tea","Negroni", "Bloody Mary", "Tequila Sunrise","Espresso Martini","★Virgin Mojito★", "★Shirley Temple★", "★Lemonade★")
+    var allCocktails by remember { mutableStateOf<List<String>>(emptyList())}
+
+    LaunchedEffect(Unit) {
+        val db = CocktailDatabase.getDatabase(context)
+        val namesFromDb = db.cocktailDao().getAllNames()
+        allCocktails = namesFromDb
     }
 
-    val uniqueRandomList = (0..allCocktails.size-1).shuffled().take(3)
+    var uniqueRandomList by remember { mutableStateOf<List<Int>>(emptyList()) }
+//    val uniqueRandomList = (0..allCocktails.size-1).shuffled().take(3)
     var vCounter by remember { mutableStateOf(0) }
-    val imageResIds = remember {
+    //    var currentImageIndex by remember { mutableStateOf(uniqueRandomList[0])}
+    var currentImageIndex by remember { mutableStateOf<Int?>(null) }
+    val imageViewRef = remember { mutableStateOf<ImageView?>(null) }
+
+    val imageResIds by remember(allCocktails) {
+        mutableStateOf(
         allCocktails.mapNotNull { cocktail ->
             val imageName = cocktail
                 .lowercase()
@@ -431,16 +459,25 @@ fun LoadingScreen(navController: NavController)
             val resId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
             if (resId != 0) resId else null
         }
+        )
     }
-    var currentImageIndex by remember { mutableStateOf(uniqueRandomList[0])}
-    val imageViewRef = remember { mutableStateOf<ImageView?>(null) }
+
+    LaunchedEffect(allCocktails) {
+        if (allCocktails.isNotEmpty()) {
+            uniqueRandomList = (0 until allCocktails.size).shuffled().take(minOf(3, allCocktails.size))
+            currentImageIndex = uniqueRandomList[0]
+            vCounter = 0
+        }
+    }
 
     LaunchedEffect(currentImageIndex) {
+        val index = currentImageIndex
+        if (index == null) return@LaunchedEffect
         val imageView = imageViewRef.value
         imageView?.let {
             // Początek poza ekranem po prawej
             it.translationX = 1000f
-            it.setImageResource(imageResIds[currentImageIndex])
+            it.setImageResource(imageResIds[index])
 
             // Animacja przesuwania w lewo
             val animator = ObjectAnimator.ofFloat(it, "translationX", 1000f, -1000f)
