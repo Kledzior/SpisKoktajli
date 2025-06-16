@@ -80,13 +80,30 @@ import kotlin.text.lowercase
 import android.animation.ObjectAnimator
 import android.graphics.drawable.ColorDrawable
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import kotlin.random.Random
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.compose.material.icons.filled.AccountCircle
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        val user = FirebaseAuth.getInstance().currentUser
+        Log.d("AuthCheck", "Zalogowany użytkownik: ${user?.email}")
+
+
         enableEdgeToEdge()
         setContent {
             MobileCocktailsTheme {
@@ -99,7 +116,11 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController, startDestination = "loadingScreen") {
+    NavHost(navController, startDestination = if (FirebaseAuth.getInstance().currentUser != null) "loadingScreen" else "login") {
+        composable("login")
+        {
+            LoginScreen(navController)
+        }
         composable("loadingScreen")
         {
             LoadingScreen(navController)
@@ -119,6 +140,67 @@ fun AppNavigation() {
 
     }
 }
+@Composable
+fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+            FirebaseAuth.getInstance().signInWithCredential(credential)
+                .addOnCompleteListener { authResult ->
+                    if (authResult.isSuccessful) {
+                        navController.navigate("loadingScreen") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        Toast.makeText(context, "Logowanie nieudane", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        } catch (e: ApiException) {
+            Toast.makeText(context, "Google sign-in error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Zaloguj się", fontSize = 28.sp)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Image(
+            painter = painterResource(id = R.drawable.google_przycisk),
+            contentDescription = "Zaloguj przez Google",
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken("878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com")
+                        .requestEmail()
+                        .build()
+                    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                    val signInIntent = googleSignInClient.signInIntent
+                    launcher.launch(signInIntent)
+                }
+        )
+
+    }
+}
+
+
+
+
+
+
 @Composable
 fun SplashScreen(navController: NavController) {
     Column(
@@ -148,6 +230,7 @@ fun CocktailList(navController: NavController) {
 
 
 
+    val context = LocalContext.current
 
     val tabs = listOf("Alkoholowe", "Bezalkoholowe")
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
@@ -210,6 +293,35 @@ fun CocktailList(navController: NavController) {
                         }
                         .padding(top = 30.dp)
                 )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "🚪 Wyloguj się",
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            scope.launch {
+                                drawerState.close() // zamknij drawer
+
+                                val googleSignInClient = GoogleSignIn.getClient(
+                                    context,
+                                    GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestIdToken("878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com")
+                                        .requestEmail()
+                                        .build()
+                                )
+
+                                googleSignInClient.revokeAccess().addOnCompleteListener {
+                                    FirebaseAuth.getInstance().signOut() // wyloguj Firebase
+                                    navController.navigate("login") {
+                                        popUpTo("cocktailList") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16.dp)
+                )
+
             }
         },
         content = { innerPadding ->
@@ -344,6 +456,23 @@ fun FavoritesList(navController: NavController) {
                             navController.navigate("favorites") { popUpTo("cocktailList") }
                         }
                         .padding(top = 30.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "🚪 Wyloguj się",
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            scope.launch {
+                                drawerState.close() // zamknij drawer
+                                FirebaseAuth.getInstance().signOut() // wyloguj
+                                navController.navigate("login") {
+                                    popUpTo("cocktailList") { inclusive = true }
+                                }
+                            }
+                        }
+                        .padding(16.dp)
                 )
             }
         },

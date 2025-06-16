@@ -2,4 +2,6 @@
     <string name="app_name">MobileCocktails</string>
     <string name="title_activity_cocktail">CocktailActivity</string>
     <string name="title_activity_cock_tail">CockTailActivity</string>
+    <string name="default_web_client_id">878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com</string>
+
 </resources>
