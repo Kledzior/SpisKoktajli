@@ -80,6 +80,7 @@ import kotlin.text.lowercase
 import android.animation.ObjectAnimator
 import android.graphics.drawable.ColorDrawable
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.room.Room
@@ -89,10 +90,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.random.Random
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import androidx.compose.material.icons.filled.AccountCircle
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
+        val user = FirebaseAuth.getInstance().currentUser
+        Log.d("AuthCheck", "Zalogowany użytkownik: ${user?.email}")
+
+
         enableEdgeToEdge()
         runBlocking {
             val db = Room.databaseBuilder(
@@ -117,7 +134,11 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    NavHost(navController, startDestination = "loadingScreen") {
+    NavHost(navController, startDestination = if (FirebaseAuth.getInstance().currentUser != null) "loadingScreen" else "login") {
+        composable("login")
+        {
+            LoginScreen(navController)
+        }
         composable("loadingScreen")
         {
             LoadingScreen(navController)
@@ -137,6 +158,67 @@ fun AppNavigation() {
 
     }
 }
+@Composable
+fun LoginScreen(navController: NavController) {
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+            FirebaseAuth.getInstance().signInWithCredential(credential)
+                .addOnCompleteListener { authResult ->
+                    if (authResult.isSuccessful) {
+                        navController.navigate("loadingScreen") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        Toast.makeText(context, "Logowanie nieudane", Toast.LENGTH_SHORT).show()
+                    }
+                }
+        } catch (e: ApiException) {
+            Toast.makeText(context, "Google sign-in error: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text("Zaloguj się", fontSize = 28.sp)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Image(
+            painter = painterResource(id = R.drawable.google_przycisk),
+            contentDescription = "Zaloguj przez Google",
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                        .requestIdToken("878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com")
+                        .requestEmail()
+                        .build()
+                    val googleSignInClient = GoogleSignIn.getClient(context, gso)
+                    val signInIntent = googleSignInClient.signInIntent
+                    launcher.launch(signInIntent)
+                }
+        )
+
+    }
+}
+
+
+
+
+
+
 @Composable
 fun SplashScreen(navController: NavController) {
     Column(
@@ -166,6 +248,7 @@ fun CocktailList(navController: NavController) {
 
 
 
+    val context = LocalContext.current
 
     val tabs = listOf("Alkoholowe", "Bezalkoholowe")
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
@@ -207,28 +290,57 @@ fun CocktailList(navController: NavController) {
                     .width(300.dp)
                     .padding(16.dp)
             ){
-            Text(
-                text = "\uD83C\uDFE0 Główna Strona \uD83C\uDFE0", fontSize = 20.sp,
-                modifier = Modifier
+                Text(
+                    text = "\uD83C\uDFE0 Główna Strona \uD83C\uDFE0", fontSize = 20.sp,
+                    modifier = Modifier
 
-                    .fillMaxWidth().padding(16.dp)
-                    .clickable {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("cocktailList") { popUpTo("cocktailList") }
-                    }
-                    .padding(top = 50.dp)
-            )
-            Text(
-                text = "\u2B50 Ulubione \u2B50", fontSize = 20.sp,
-                modifier = Modifier
-                    .fillMaxWidth().padding(10.dp)
-                    .clickable {
-                        scope.launch { drawerState.close() }
-                        navController.navigate("favorites") { popUpTo("cocktailList") }
-                    }
-                    .padding(top = 30.dp)
-            )
-        }
+                        .fillMaxWidth().padding(16.dp)
+                        .clickable {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("cocktailList") { popUpTo("cocktailList") }
+                        }
+                        .padding(top = 50.dp)
+                )
+                Text(
+                    text = "\u2B50 Ulubione \u2B50", fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth().padding(10.dp)
+                        .clickable {
+                            scope.launch { drawerState.close() }
+                            navController.navigate("favorites") { popUpTo("cocktailList") }
+                        }
+                        .padding(top = 30.dp)
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "🚪 Wyloguj się",
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            scope.launch {
+                                drawerState.close() // zamknij drawer
+
+                                val googleSignInClient = GoogleSignIn.getClient(
+                                    context,
+                                    GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestIdToken("878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com")
+                                        .requestEmail()
+                                        .build()
+                                )
+
+                                googleSignInClient.revokeAccess().addOnCompleteListener {
+                                    FirebaseAuth.getInstance().signOut() // wyloguj Firebase
+                                    navController.navigate("login") {
+                                        popUpTo("cocktailList") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16.dp)
+                )
+
+            }
         },
         content = { innerPadding ->
 
@@ -253,20 +365,21 @@ fun CocktailList(navController: NavController) {
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = 4.dp, top = 20.dp)
+                        .background(MaterialTheme.colorScheme.surface)
                 ) {
                     items(currentList) { cocktail ->
                         Card(
                             modifier = Modifier
                                 .padding(4.dp)
-                                .widthIn(max = 600.dp) // Dobrze wygląda na tabletach
-                                .align(Alignment.CenterHorizontally) // Wyśrodkuj
+                                .widthIn(max = 600.dp)
+                                .align(Alignment.CenterHorizontally)
                                 .clickable {
                                     Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
                                     selectedCocktail = cocktail
                                     val intent = Intent(contextCockTail,CocktailActivity::class.java)
                                     intent.putExtra("cocktail_name", selectedCocktail)
                                     contextCockTail.startActivity(intent)
-                                           },
+                                },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -352,6 +465,7 @@ fun FavoritesList(navController: NavController) {
                         .padding(top = 50.dp)
                 )
                 Text(
+
                     text = "\u2B50 Ulubione \u2B50", fontSize = 20.sp,
                     modifier = Modifier
                         .fillMaxWidth().padding(10.dp)
@@ -361,70 +475,99 @@ fun FavoritesList(navController: NavController) {
                         }
                         .padding(top = 30.dp)
                 )
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "🚪 Wyloguj się",
+                    fontSize = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            scope.launch {
+                                drawerState.close() // zamknij drawer
+
+                                val googleSignInClient = GoogleSignIn.getClient(
+                                    context,
+                                    GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                        .requestIdToken("878557252725-3ivvjs9peec2rbvi1de1kqq568ons1ml.apps.googleusercontent.com")
+                                        .requestEmail()
+                                        .build()
+                                )
+
+                                googleSignInClient.revokeAccess().addOnCompleteListener {
+                                    FirebaseAuth.getInstance().signOut() // wyloguj Firebase
+                                    navController.navigate("login") {
+                                        popUpTo("cocktailList") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(16.dp)
+                )
             }
         },
-     content = { innerPadding ->
+        content = { innerPadding ->
 
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(4.dp)
-        )
-        {
-
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 200.dp),
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 4.dp, top = 24.dp)
-            ) {
-                items(favorites) { cocktail ->
-                    Card(
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .fillMaxWidth()
-                            .clickable {
-                                Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
-                                selectedCocktail = cocktail
-                                val intent = Intent(contextCockTail,CocktailActivity::class.java)
-                                intent.putExtra("cocktail_name", selectedCocktail)
-                                contextCockTail.startActivity(intent)
-                            },
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val context = LocalContext.current
-                            val imageName = cocktail
-                                .lowercase()
-                                .replace(" ", "")
-                                .replace("ñ", "n")
-                                .replace("[^a-z0-9_]".toRegex(), "")
-                                .replace("★", "")
-                            val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(4.dp)
+            )
+            {
 
-                            Image(
-                                painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
-                                contentDescription = "$cocktail Image",
-                                modifier = Modifier
-                                    .height(270.dp)
-                                    .fillMaxWidth()
-                                    .background(Color.DarkGray),
-                                contentScale = ContentScale.Crop
-                            )
-                            Text(
-                                text = cocktail,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(8.dp),
-                                style = MaterialTheme.typography.bodyLarge
-                            )
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 200.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp, top = 24.dp)
+                        .background(MaterialTheme.colorScheme.surface)
+                ) {
+                    items(favorites) { cocktail ->
+                        Card(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                                .clickable {
+                                    Log.d("CocktailApp", "Kliknięto koktajl: $cocktail")
+                                    selectedCocktail = cocktail
+                                    val intent = Intent(contextCockTail,CocktailActivity::class.java)
+                                    intent.putExtra("cocktail_name", selectedCocktail)
+                                    contextCockTail.startActivity(intent)
+                                },
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                val context = LocalContext.current
+                                val imageName = cocktail
+                                    .lowercase()
+                                    .replace(" ", "")
+                                    .replace("ñ", "n")
+                                    .replace("[^a-z0-9_]".toRegex(), "")
+                                    .replace("★", "")
+                                val imageResId = context.resources.getIdentifier(imageName, "drawable", context.packageName)
+
+                                Image(
+                                    painter = painterResource(id = if (imageResId != 0) imageResId else R.drawable.trollface),
+                                    contentDescription = "$cocktail Image",
+                                    modifier = Modifier
+                                        .height(270.dp)
+                                        .fillMaxWidth()
+                                        .background(Color.DarkGray),
+                                    contentScale = ContentScale.Crop
+                                )
+                                Text(
+                                    text = cocktail,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.padding(8.dp),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-        }
-    })
+            }
+        })
 }
 
 @Composable
@@ -500,18 +643,18 @@ fun LoadingScreen(navController: NavController)
     AndroidView(
         modifier = Modifier
             .fillMaxSize(),
-            factory = {
+        factory = {
                 context ->
-                ImageView(context).apply{
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    imageViewRef.value = this
+            ImageView(context).apply{
+                scaleType = ImageView.ScaleType.CENTER_CROP
+                imageViewRef.value = this
 //                    background = null
-                    setBackgroundColor(Color.Red.toArgb())
+                setBackgroundColor(Color.Red.toArgb())
 
-                }
-            },
-            update = { imageView ->
             }
+        },
+        update = { imageView ->
+        }
     )
 
 }
