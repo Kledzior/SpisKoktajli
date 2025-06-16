@@ -251,8 +251,6 @@ fun CocktailListWithDetails(cocktailName: String?) {
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.surface),
-
-
         ) {
 
             item {
