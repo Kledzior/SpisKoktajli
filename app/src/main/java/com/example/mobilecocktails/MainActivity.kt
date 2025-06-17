@@ -620,7 +620,12 @@ fun LoadingScreen(navController: NavController)
         imageView?.let {
             // Początek poza ekranem po prawej
             it.translationX = 1000f
-            it.setImageResource(imageResIds[index])
+            val resId = if (index in imageResIds.indices) {
+                imageResIds[index]
+            } else {
+                context.resources.getIdentifier("trollface", "drawable", context.packageName)
+            }
+            it.setImageResource(resId)
 
             // Animacja przesuwania w lewo
             val animator = ObjectAnimator.ofFloat(it, "translationX", 1000f, -1000f)
